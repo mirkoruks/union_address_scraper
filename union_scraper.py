@@ -1,7 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import time 
 import pandas as pd
 
@@ -11,7 +14,12 @@ def scrape_union_addresses():
     '''
     url = "https://www.presidency.ucsb.edu/documents/app-categories/spoken-addresses-and-remarks/presidential/state-the-union-addresses"
 
-    driver = webdriver.Firefox()
+    chrome_options = Options()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    driver = webdriver.Chrome(service = Service(ChromeDriverManager().install()), options = chrome_options)
     time.sleep(5)
     driver.get(url)
 
@@ -43,19 +51,19 @@ def scrape_union_addresses():
                 
             filename = speaker_name.lower() + "_" + date.lower()
             filename = filename.replace(" ", "_").replace(".","").replace(",","")
-            with open(f"Data/{filename}.txt", "w", encoding = "utf-8") as f:
+            with open(f"data/{filename}.txt", "w", encoding = "utf-8") as f:
                 f.write(speech)
                 f.close()
             driver.back()
             time.sleep(0.2)
 
-            speech_result.append({"Date":date,"Speaker": speaker_name, "Link": link, "File": f"Data/{filename}.txt"})
+            speech_result.append({"Date":date,"Speaker": speaker_name, "Link": link, "File": f"data/{filename}.txt"})
             print(f"Saving speech by {speaker_name} from {date}.")
 
         try:
             driver.find_element(By.CLASS_NAME, "next").find_element(By.TAG_NAME, "a").click()
         except:
             last_page = True
-            print("Scraping finished. All data is saved in Data directory. Have a nice day and goodbye!")
+            print("Scraping finished. All data is saved in data directory. Have a nice day and goodbye!")
             driver.close()
-    pd.DataFrame(speech_result).to_csv("Data/speeches_overview.csv")
+    pd.DataFrame(speech_result).to_csv("data/speeches_overview.csv")
